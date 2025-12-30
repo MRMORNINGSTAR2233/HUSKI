@@ -8,11 +8,11 @@ import sqlparse
 from sqlparse.sql import IdentifierList, Identifier, Where
 from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.engine import Engine
-from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 
 from .config import PostgresConfig, LLMConfig
 from .models import SQLResult
+from .llm_factory import LLMFactory
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +47,7 @@ class SQLEngine:
         self.llm_config = llm_config
         self._engine: Optional[Engine] = None
 
-        self.llm = ChatOpenAI(
-            api_key=llm_config.api_key,
-            model=llm_config.model,
-            temperature=0.0,
-        )
+        self.llm = LLMFactory.create_chat_llm(llm_config)
 
     def connect(self) -> None:
         """Establish database connection."""

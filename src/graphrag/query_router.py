@@ -3,11 +3,10 @@
 import logging
 import json
 from typing import Dict, Any
-from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate
 
 from .config import LLMConfig
 from .models import QueryIntent, QueryClassification
+from .llm_factory import LLMFactory
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +21,7 @@ class QueryRouter:
             llm_config: LLM configuration
         """
         self.llm_config = llm_config
-        self.llm = ChatOpenAI(
-            api_key=llm_config.api_key,
-            model=llm_config.model,
-            temperature=0.0,  # Deterministic classification
-        )
+        self.llm = LLMFactory.create_chat_llm(llm_config)
 
         # Classification prompt
         self.classification_prompt = ChatPromptTemplate.from_messages([

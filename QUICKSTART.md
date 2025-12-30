@@ -8,12 +8,17 @@
 
 # 2. Edit .env with your credentials
 nano .env  # or use your preferred editor
+# Set: LLM_PROVIDER (openai, gemini, or groq)
+# Set: API key for your chosen provider
 
 # 3. Load sample data
 python examples/setup_sample_data.py
 
 # 4. Run examples
 python examples/basic_usage.py
+
+# 5. Compare providers (optional)
+python examples/multi_provider_demo.py
 ```
 
 ## Quick Start Code
@@ -21,10 +26,48 @@ python examples/basic_usage.py
 ```python
 from graphrag import GraphRAG
 
-# Simple usage
+# Simple usage (uses provider from .env)
 with GraphRAG() as graphrag:
     response = graphrag.query("Your question here")
     print(response.answer)
+```
+
+## Choose Your Provider
+
+### OpenAI (Reliable, Best Features)
+```python
+from graphrag import GraphRAG, GraphRAGConfig
+
+config = GraphRAGConfig()
+config.llm.provider = "openai"
+config.llm.openai_model = "gpt-4-turbo-preview"
+
+with GraphRAG(config) as graphrag:
+    response = graphrag.query("Your question")
+```
+
+### Google Gemini (Long Context, 2M tokens)
+```python
+from graphrag import GraphRAG, GraphRAGConfig
+
+config = GraphRAGConfig()
+config.llm.provider = "gemini"
+config.llm.gemini_model = "gemini-2.5-pro"
+
+with GraphRAG(config) as graphrag:
+    response = graphrag.query("Your question")
+```
+
+### Groq (Ultra-Fast, 280 tokens/sec)
+```python
+from graphrag import GraphRAG, GraphRAGConfig
+
+config = GraphRAGConfig()
+config.llm.provider = "groq"
+config.llm.groq_model = "llama-3.3-70b-versatile"
+
+with GraphRAG(config) as graphrag:
+    response = graphrag.query("Your question")
 ```
 
 ## Query Examples

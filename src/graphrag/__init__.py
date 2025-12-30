@@ -4,5 +4,6 @@ __version__ = "0.1.0"
 
 from .graphrag import GraphRAG
 from .config import GraphRAGConfig
+from .llm_factory import LLMFactory
 
-__all__ = ["GraphRAG", "GraphRAGConfig"]
+__all__ = ["GraphRAG", "GraphRAGConfig", "LLMFactory"]

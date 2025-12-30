@@ -46,13 +46,62 @@ class PostgresConfig(BaseModel):
 class LLMConfig(BaseModel):
     """LLM configuration."""
 
-    api_key: str = Field(default_factory=lambda: os.getenv("OPENAI_API_KEY", ""))
-    model: str = Field(default_factory=lambda: os.getenv("OPENAI_MODEL", "gpt-4-turbo-preview"))
-    embedding_model: str = Field(
+    # Provider selection: openai, gemini, or groq
+    provider: str = Field(default_factory=lambda: os.getenv("LLM_PROVIDER", "openai"))
+    
+    # OpenAI Configuration
+    openai_api_key: str = Field(default_factory=lambda: os.getenv("OPENAI_API_KEY", ""))
+    openai_model: str = Field(default_factory=lambda: os.getenv("OPENAI_MODEL", "gpt-4-turbo-preview"))
+    openai_embedding_model: str = Field(
         default_factory=lambda: os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
     )
+    
+    # Gemini Configuration
+    gemini_api_key: str = Field(default_factory=lambda: os.getenv("GEMINI_API_KEY", ""))
+    gemini_model: str = Field(default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-2.5-pro"))
+    gemini_embedding_model: str = Field(
+        default_factory=lambda: os.getenv("GEMINI_EMBEDDING_MODEL", "models/text-embedding-004")
+    )
+    
+    # Groq Configuration
+    groq_api_key: str = Field(default_factory=lambda: os.getenv("GROQ_API_KEY", ""))
+    groq_model: str = Field(default_factory=lambda: os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"))
+    groq_embedding_model: str = Field(
+        default_factory=lambda: os.getenv("GROQ_EMBEDDING_MODEL", "text-embedding-3-large")
+    )
+    
     temperature: float = 0.0
     max_tokens: Optional[int] = None
+    
+    @property
+    def api_key(self) -> str:
+        """Get API key for selected provider."""
+        if self.provider == "gemini":
+            return self.gemini_api_key
+        elif self.provider == "groq":
+            return self.groq_api_key
+        else:
+            return self.openai_api_key
+    
+    @property
+    def model(self) -> str:
+        """Get model for selected provider."""
+        if self.provider == "gemini":
+            return self.gemini_model
+        elif self.provider == "groq":
+            return self.groq_model
+        else:
+            return self.openai_model
+    
+    @property
+    def embedding_model(self) -> str:
+        """Get embedding model for selected provider."""
+        if self.provider == "gemini":
+            return self.gemini_embedding_model
+        elif self.provider == "groq":
+            return self.groq_embedding_model
+        else:
+            return self.openai_embedding_model
 
 
 class GraphRAGConfig(BaseModel):

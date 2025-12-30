@@ -5,11 +5,11 @@ import time
 from typing import List, Dict, Any, Optional
 import chromadb
 from chromadb.config import Settings
-from chromadb.utils import embedding_functions
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from .config import ChromaConfig, LLMConfig
 from .models import VectorResult
+from .llm_factory import LLMFactory
 
 logger = logging.getLogger(__name__)
 
@@ -48,16 +48,13 @@ class VectorStore:
                 )
             )
 
-            # Set up OpenAI embedding function
-            openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-                api_key=self.llm_config.api_key,
-                model_name=self.llm_config.embedding_model,
-            )
+            # Set up embedding function based on provider
+            embedding_function = self._create_embedding_function()
 
             # Get or create collection
             self._collection = self._client.get_or_create_collection(
                 name=self.chroma_config.collection_name,
-                embedding_function=openai_ef,
+                embedding_function=embedding_function,
                 metadata={"hnsw:space": "cosine"},
             )
 
@@ -69,6 +66,32 @@ class VectorStore:
         except Exception as e:
             logger.error(f"Failed to initialize ChromaDB: {e}")
             raise
+
+    def _create_embedding_function(self):
+        """Create appropriate embedding function based on provider."""
+        from chromadb.utils import embedding_functions
+
+        provider = self.llm_config.provider.lower()
+
+        if provider == "openai":
+            return embedding_functions.OpenAIEmbeddingFunction(
+                api_key=self.llm_config.openai_api_key,
+                model_name=self.llm_config.openai_embedding_model,
+            )
+        elif provider == "gemini":
+            return embedding_functions.GoogleGenerativeAiEmbeddingFunction(
+                api_key=self.llm_config.gemini_api_key,
+                model_name=self.llm_config.gemini_embedding_model,
+            )
+        elif provider == "groq":
+            # Groq uses OpenAI embeddings as fallback
+            logger.info("Using OpenAI embeddings for Groq provider")
+            return embedding_functions.OpenAIEmbeddingFunction(
+                api_key=self.llm_config.openai_api_key or self.llm_config.groq_api_key,
+                model_name=self.llm_config.groq_embedding_model,
+            )
+        else:
+            raise ValueError(f"Unsupported embedding provider: {provider}")
 
     def add_documents(
         self,

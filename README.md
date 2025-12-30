@@ -10,6 +10,27 @@ A hybrid RAG system that combines vector search, knowledge graphs, and SQL datab
 - 📊 **Structured Data Support**: SQL generation for numerical queries
 - 🎯 **Source Citations**: Full provenance tracking for answers
 - ⚡ **Parallel Execution**: Concurrent retrieval from multiple sources
+- 🤖 **Multi-Provider Support**: OpenAI, Google Gemini, and Groq
+
+## Supported LLM Providers
+
+### OpenAI
+- **Models**: GPT-4 Turbo, GPT-4, GPT-3.5 Turbo
+- **Context**: Up to 128K tokens
+- **Features**: Function calling, JSON mode, Vision
+- **Best for**: Production reliability, advanced reasoning
+
+### Google Gemini
+- **Models**: Gemini 3 Pro, Gemini 2.5 Pro/Flash, Gemini 3 Flash
+- **Context**: Up to 2M tokens (Gemini 2.5 Pro)
+- **Features**: Multimodal, massive context, code execution
+- **Best for**: Long documents, multimodal understanding
+
+### Groq
+- **Models**: Llama 3.3 70B, Llama 3.1 8B, GPT-OSS 120B/20B
+- **Context**: Up to 131K tokens
+- **Features**: Ultra-fast inference (~280-1000 tps), cost-effective
+- **Best for**: Low latency, high throughput, open-source models
 
 ## Architecture
 
@@ -33,7 +54,10 @@ User Query → Query Router → [Graph DB | Vector Store | SQL DB] → Context A
 - Python 3.10+
 - Neo4j (for graph queries)
 - PostgreSQL (for SQL queries)
-- OpenAI API key
+- At least one LLM provider API key:
+  - OpenAI API key, or
+  - Google Gemini API key, or
+  - Groq API key
 
 ### Setup
 
@@ -53,9 +77,15 @@ User Query → Query Router → [Graph DB | Vector Store | SQL DB] → Context A
    ```bash
    cp .env.example .env
    # Edit .env with your credentials:
-   # - OPENAI_API_KEY
-   # - NEO4J_PASSWORD
-   # - POSTGRES_PASSWORD
+   # Choose your LLM provider:
+   #   LLM_PROVIDER=openai (or gemini or groq)
+   # Add appropriate API key:
+   #   OPENAI_API_KEY=sk-... (for OpenAI)
+   #   GEMINI_API_KEY=... (for Gemini)
+   #   GROQ_API_KEY=... (for Groq)
+   # Also set:
+   #   NEO4J_PASSWORD
+   #   POSTGRES_PASSWORD
    ```
 
 4. **Start databases** (using Docker)
@@ -127,6 +157,31 @@ response = graphrag.query("Explain Christopher Nolan's filmmaking style")
 ```
 
 ### Advanced Usage
+
+#### Choose LLM Provider
+```python
+from graphrag import GraphRAG, GraphRAGConfig
+
+# Method 1: Use environment variable
+config = GraphRAGConfig()  # Uses LLM_PROVIDER from .env
+
+# Method 2: Set programmatically
+config = GraphRAGConfig()
+config.llm.provider = "gemini"  # or "openai" or "groq"
+
+# Method 3: Different providers for different tasks
+config = GraphRAGConfig()
+config.llm.provider = "groq"  # Fast inference
+config.llm.groq_model = "llama-3.3-70b-versatile"
+
+graphrag = GraphRAG(config)
+```
+
+#### Compare Providers
+```python
+# Run the multi-provider demo
+python examples/multi_provider_demo.py
+```
 
 #### With Detailed Explanation
 ```python
@@ -208,9 +263,23 @@ All configuration is managed through environment variables or the `GraphRAGConfi
 ### Environment Variables (.env)
 
 ```bash
-# LLM
+# LLM Provider (choose one: openai, gemini, or groq)
+LLM_PROVIDER=openai
+
+# OpenAI
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4-turbo-preview
+OPENAI_EMBEDDING_MODEL=text-embedding-3-large
+
+# Google Gemini
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-pro
+GEMINI_EMBEDDING_MODEL=models/text-embedding-004
+
+# Groq
+GROQ_API_KEY=...
+GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_EMBEDDING_MODEL=text-embedding-3-large
 
 # Neo4j
 NEO4J_URI=bolt://localhost:7687
@@ -247,7 +316,25 @@ pytest tests/ --cov=graphrag --cov-report=html
 
 ## Examples
 
-### Example 1: Movie Database Query
+### Example 1: Using Different Providers
+```python
+# OpenAI (best for reliability)
+config = GraphRAGConfig()
+config.llm.provider = "openai"
+config.llm.openai_model = "gpt-4-turbo-preview"
+
+# Gemini (best for long context)
+config = GraphRAGConfig()
+config.llm.provider = "gemini"
+config.llm.gemini_model = "gemini-2.5-pro"  # 2M token context!
+
+# Groq (best for speed)
+config = GraphRAGConfig()
+config.llm.provider = "groq"
+config.llm.groq_model = "llama-3.3-70b-versatile"  # 280 tokens/sec
+```
+
+### Example 2: Movie Database Query
 ```python
 # Multi-hop query
 response = graphrag.query(
@@ -285,12 +372,22 @@ response = graphrag.query(
 
 ## Performance
 
-Typical query latencies:
-- Simple factual: 200-500ms
-- Multi-hop graph: 500-1500ms
-- SQL aggregation: 100-300ms
-- Vector search: 300-800ms
-- Hybrid: 1000-2000ms
+Typical query latencies (varies by provider):
+
+**OpenAI (GPT-4 Turbo)**:
+- Simple factual: 500-1000ms
+- Multi-hop graph: 1000-2000ms
+- SQL aggregation: 300-800ms
+
+**Gemini (2.5 Pro)**:
+- Simple factual: 400-900ms
+- Multi-hop graph: 800-1800ms
+- Long context queries: 1000-3000ms
+
+**Groq (Llama 3.3 70B)**:
+- Simple factual: 200-400ms (⚡ fastest)
+- Multi-hop graph: 400-1000ms
+- SQL aggregation: 150-400ms
 
 Optimizations:
 - Parallel execution for independent queries
@@ -314,9 +411,10 @@ Optimizations:
 ## Limitations
 
 1. **Graph Construction**: Requires manual or semi-automated entity/relation extraction
-2. **LLM Dependency**: Requires OpenAI API (or compatible endpoint)
+2. **LLM Provider**: Requires at least one API key (OpenAI, Gemini, or Groq)
 3. **Database Setup**: Neo4j and PostgreSQL must be running
-4. **Context Window**: Limited by LLM context length (8K-32K tokens)
+4. **Context Window**: Limited by LLM context length (varies by model)
+5. **Groq Embeddings**: Groq doesn't provide embeddings, falls back to OpenAI
 
 ## Roadmap
 
@@ -357,5 +455,7 @@ For issues and questions:
 
 ---
 
-**Built with:** Python, LangChain, Neo4j, ChromaDB, PostgreSQL, OpenAI
+**Built with:** Python, LangChain, Neo4j, ChromaDB, PostgreSQL
+
+**Supported LLM Providers:** OpenAI, Google Gemini, Groq
 Hybrid Unstructured-Structured Knowledge Integration

@@ -2,11 +2,11 @@
 
 import logging
 from typing import List, Dict, Any
-from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 
 from .config import LLMConfig
 from .models import Source, ReasoningStep
+from .llm_factory import LLMFactory
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +21,7 @@ class AnswerGenerator:
             llm_config: LLM configuration
         """
         self.llm_config = llm_config
-        self.llm = ChatOpenAI(
-            api_key=llm_config.api_key,
-            model=llm_config.model,
-            temperature=llm_config.temperature,
-            max_tokens=llm_config.max_tokens,
-        )
+        self.llm = LLMFactory.create_chat_llm(llm_config)
 
         # Answer generation prompt
         self.answer_prompt = ChatPromptTemplate.from_messages([
