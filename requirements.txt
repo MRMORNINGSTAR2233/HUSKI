@@ -1,0 +1,28 @@
+# Core LLM Framework
+langchain>=0.1.0
+langchain-openai>=0.0.5
+langchain-community>=0.0.20
+openai>=1.10.0
+
+# Vector Store
+chromadb>=0.4.22
+sentence-transformers>=2.3.1
+
+# Graph Database
+neo4j>=5.15.0
+
+# SQL Database
+sqlalchemy>=2.0.25
+psycopg2-binary>=2.9.9
+sqlparse>=0.4.4
+
+# Utilities
+python-dotenv>=1.0.0
+pydantic>=2.5.0
+tiktoken>=0.5.2
+
+# Development
+pytest>=7.4.3
+pytest-asyncio>=0.23.3
+black>=23.12.1
+ruff>=0.1.9
